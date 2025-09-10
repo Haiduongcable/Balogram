@@ -13,18 +13,20 @@ import { theme } from "../components/core/theme";
 import { Divider } from "react-native-elements";
 import { MaterialCommunityIcons } from "react-native-vector-icons";
 import { chat, message } from "../handle_api";
+import { ROUTES } from "../constants/routes";
+import Logger from "../helpers/logger";
 const { width } = Dimensions.get("window");
 
 export default function ChatInformation({ route, navigation }) {
     const token = useSelector(state => state.authReducer.token);
     const { item } = route.params;
-    console.log(item)
+    Logger.log('ChatInformation route item', item);
     const onDeleteChat = async () => {
         try {
             const deleteChat = await chat.deleteChat(item._id, token);
-            navigation.navigate("MainMessengerScreen");
+            navigation.navigate(ROUTES.MainMessenger);
         } catch (err) {
-            console.log(err);
+            Logger.error('Delete chat failed', err);
         }
     };
     return (

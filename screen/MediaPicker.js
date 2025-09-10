@@ -10,141 +10,94 @@ import { Picker } from '@react-native-picker/picker';
 import { StatusBar } from 'react-native';
 const { width } = Dimensions.get('window')
 
-const Header = props => {
-
-  const Item = Picker.Item;
-
+const Header = ({albumNames, selectedAssets, selectedAlbum, handleBack, handleSend, handleAlbumSelected, handleLaunchCamera}) => {
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
-      <Icon
-        name='close'
-        type='antdesign'
-
-        iconStyle={{
-          marginLeft: 10,
-        }}
-        onPress={props.handleBack}
-      />
-
-      <View style={{ width: 200 }}>
+    <View style={headerStyles.container}>
+      <TouchableOpacity onPress={handleBack} style={headerStyles.iconBtn}>
+        <Icon name='close' type='antdesign' size={28} />
+      </TouchableOpacity>
+      <View style={headerStyles.pickerContainer}>
         <Picker
           mode='dropdown'
-          selectedValue={props.selectedAlbum}
-          onValueChange={props.handleAlbumSelected}
-          style={{ marginRight: 40 }}>
-          {
-            props.albumNames.map((album, idx) => {
-              return (
-                <Item key={idx} label={album} value={album} />
-              );
-            })
-          }
+          selectedValue={selectedAlbum}
+          onValueChange={handleAlbumSelected}
+          style={headerStyles.picker}
+        >
+          {albumNames.map((album) => (
+            <Picker.Item key={album} label={album} value={album} />
+          ))}
         </Picker>
       </View>
-
-      {
-        props.selectedAssets.length > 0 ?
-          <Button
-            title='Next'
-            containerStyle={{ marginRight: 20 }}
-            style={{ marginRight: 20 }}
-            onPress={props.handleSend}
-          />
-          :
-          <Icon
-            type='antdesign'
-            name='camera'
-            size={28}
-            iconStyle={{ marginRight: 20 }}
-            onPress={props.handleLaunchCamera}
-          />
-      }
+      {selectedAssets.length > 0 ? (
+        <Button
+          title='Next'
+          buttonStyle={headerStyles.nextBtn}
+          onPress={handleSend}
+        />
+      ) : (
+        <TouchableOpacity onPress={handleLaunchCamera} style={headerStyles.iconBtn}>
+          <Icon type='antdesign' name='camera' size={28} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
 
-const MediaItem = props => {
-  const selectedAssets = props.selectedAssets;
-  const item = props.item;
+const headerStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 12,
+  },
+  iconBtn: {
+    padding: 6,
+  },
+  pickerContainer: {
+    flex: 1,
+    marginHorizontal: 18,
+    justifyContent: 'center',
+  },
+  picker: {
+    height: 40,
+    width: '100%',
+  },
+  nextBtn: {
+    paddingHorizontal: 18,
+    backgroundColor: '#0275d8',
+    borderRadius: 20,
+  },
+});
 
-  const isInSelectedAssets = () => {
-    return selectedAssets.filter(asset => asset.uri === item.uri).length > 0;
-  }
-
-  const getIndexInSelectedAssets = () => {
-    return selectedAssets.findIndex(asset => asset.uri === item.uri);
-  }
-
+const MediaItem = ({ item, selectedAssets, handleItemSelected }) => {
+  const isSelected = selectedAssets.some(asset => asset.uri === item.uri);
+  const selectedIndex = selectedAssets.findIndex(asset => asset.uri === item.uri);
   return (
-
-    <TouchableOpacity
-      style={{ position: 'relative' }}
-      onPress={() => props.handleItemSelected(item)}
-    >
-      <Image
-        source={{
-          uri: item.uri,
-        }}
-        style={styles.image}
-      />
-
-      <View
-        style={[
-          styles.selectedImage,
-          {
-            backgroundColor: isInSelectedAssets()
-              ? 'rgba(255,255,255,0.40);'
-              : 'transparent',
-          },
-        ]}
-      />
-
-      <View
-        style={[
-          styles.selected,
-          {
-            backgroundColor:
-              isInSelectedAssets()
-                ? '#0275d8'
-                : '#292b2c',
-            borderColor: 'white',
-            borderWidth: 2,
-          },
-        ]}
-      >
-        <Text style={styles.text}>
-          {isInSelectedAssets()
-            ? getIndexInSelectedAssets() + 1
-            : ''}
-        </Text>
+    <TouchableOpacity style={styles.mediaItem} onPress={() => handleItemSelected(item)}>
+      <Image source={{ uri: item.uri }} style={styles.image} />
+      {isSelected && <View style={styles.overlay} />}
+      <View style={[styles.selectMark, {backgroundColor: isSelected ? '#0275d8' : '#292b2c', borderColor: '#fff', borderWidth: 2}]}> 
+        <Text style={styles.text}>{isSelected ? selectedIndex + 1 : ''}</Text>
       </View>
-
     </TouchableOpacity>
-
-  )
+  );
 };
 
-const Content = props => {
+const Content = ({ albumAssets, selectedAssets, handleItemSelected }) => (
+  <FlatList
+    data={albumAssets}
+    renderItem={({ item }) => (
+      <MediaItem item={item} selectedAssets={selectedAssets} handleItemSelected={handleItemSelected} />
+    )}
+    keyExtractor={(item) => item.id}
+    numColumns={3}
+    columnWrapperStyle={{ justifyContent: 'space-between', marginVertical: 2 }}
+    contentContainerStyle={{ paddingHorizontal: 4 }}
+    showsVerticalScrollIndicator={false}
+  />
+);
 
-  return (
-    <FlatList
-      columnWrapperStyle={{
-        flexWrap: 'wrap',
-        width: '100%',
-      }}
-      data={props.albumAssets}
-      renderItem={({ item }) =>
-        <MediaItem
-          item={item}
-          selectedAssets={props.selectedAssets}
-          handleItemSelected={props.handleItemSelected}
-        />
-      }
-      keyExtractor={(item) => item.id}
-      numColumns={3}
-    />
-  )
-};
 
 const MediaPicker = ({ navigation }) => {
   const albumNames = ['Camera', 'Screenshots', 'Instagram', 'Zalo', 'Facebook'];
